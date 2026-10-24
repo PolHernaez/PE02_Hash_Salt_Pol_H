@@ -15,6 +15,12 @@ public class Hash {
     }
 
     Scanner sc = new Scanner(System.in);
+    int usuarisTotals = 0;
+
+    String usuari[] = new String[3];
+    String contrasenya[] = new String[3];
+    String hashUsuari[] = new String[3];
+    String saltUsuari[] = new String[3];
 
     public void principal() {
         int menu = 0;
@@ -26,7 +32,7 @@ public class Hash {
                             +
                             "4. Calcular diverses vegades el hash d'un mateix missatge i comprovar si el resultat es manté.\r\n"
                             +
-                            "5. Verificar l'integritat dels missatges.\n6. Sortir");
+                            "5. Verificar l'integritat dels missatges.\n6. Registre d'usuaris amb salt\n7. Iniciar sessió\n8. Porves");
             menu = llegirInt("X. Escull una opcio: ");
             switch (menu) {
                 case 1:
@@ -50,19 +56,111 @@ public class Hash {
                     verificarIntegritat();
                     break;
                 case 6:
+                    registreUsuari();
+                    break;
+                case 7:
+                    IniciarSessio();
+                    break;
+                case 8:
+                    provesPractica();
+                    break;
+                case 9:
                     System.out.println("...");
                     break;
                 default:
                     break;
             }
-        } while (menu != 5);
+        } while (menu != 9);
+    }
+
+    public void provesPractica() {
+        System.out.println(usuari[0] + ": " + hashUsuari[0]);
+        System.out.println(usuari[1] + ": " + hashUsuari[1]);
+        if (!hashUsuari[0].equals(hashUsuari[1])) {
+            System.out.println("ELS HASHES SÓN DIFERENTS!");
+        } else {
+            System.out.println("Són iguals");
+        }
+
+    }
+
+    public void IniciarSessio() {
+        String usuariIniciar = "";
+        String contrasenyaIniciar = "";
+        if (usuarisTotals == 0) {
+            System.out.println("No hi han usuaris");
+        } else {
+            System.out.println("INICI DE SESSIÓ");
+            usuariIniciar = llegirString("USUARI: ");
+
+            contrasenyaIniciar = llegirString("POSA LA CONTRASSENYA: ");
+            int indexUser = buscarUsuari(usuariIniciar);
+            if (indexUser != 4) {
+                String salt = saltUsuari[indexUser];
+                String hash = hashUsuari[indexUser];
+                //String nouHash = calcularHash("salt inventat" + contrasenyaIniciar);
+                String nouHash = calcularHash(saltUsuari[indexUser] + contrasenyaIniciar);
+                if (hashUsuari[indexUser].equals(nouHash)) {
+                    System.out.println("Inici de sessió completat, benvingut " + usuari[indexUser]);
+                } else {
+                    System.out.println("Contrassenya incorrecte");
+                }
+            }
+        }
+
+    }
+
+    public int buscarUsuari(String user) {
+
+        for (int i = 0; i < usuarisTotals; i++) {
+            if (usuari[i].equals(user)) {
+                return i;
+            }
+
+        }
+        System.out.println("No s'ha trobat cap usuari que coincideixi");
+        return 4;
+    }
+
+    public void registreUsuari() {
+
+        if (usuarisTotals == 3) {
+            System.out.println("Màxim d'usuaris creats");
+        } else {
+            usuari[usuarisTotals] = llegirString("USUARI: ");
+
+            String pass = llegirString("CREA UNA CONTRASSENYA: ");
+            saltUsuari[usuarisTotals] = crearSalt();
+            hashUsuari[usuarisTotals] = calcularHash(saltUsuari[usuarisTotals] + pass);
+
+            usuarisTotals++;
+
+        }
+    }
+
+    public String crearSalt() {
+        char[] array = {
+                'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j',
+                'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't',
+                'u', 'v', 'w', 'x', 'y', 'z',
+                '9', '8', '7', '6', '5', '4', '3', '2', '1', '0'
+        };
+        // un numeor de vegades aleatori s'afegeix una lletra aleatoria
+        String salt = "";
+        int num = (int) (Math.random() * 20) + 4;
+        for (int i = 0; i < num; i++) {
+            int caracterSeleccionat = (int) (Math.random() * array.length);
+            char caracter = array[caracterSeleccionat];
+            salt = salt + caracter;
+        }
+        return salt;
     }
 
     public void verificarIntegritat() {
         try {
             // S'escriu el missatge i el guarda a missatge.txt
             String missatge = llegirString("Escriu el missatge:");
-            Files.writeString(Path.of("missatge.txt"), missatge);
+            Files.writeString(Path.of("missatge.txt"), missatge); // genera el document txt
 
             // 2. Calcula el hash i el guarda a missatge.hash
             String hashOriginal = calcularHash(missatge);
@@ -75,11 +173,12 @@ public class Hash {
             int opcio = 0;
             String triat = "";
             do {
-                opcio = llegirInt("Quin document vols llegir?\n 1 = missatge.hash\n 2 = missatge.txt");
+                opcio = llegirInt("Quin document vols comparar?\n 1 = missatgeDolent.txt\n 2 = missatge.txt\n");
+
             } while (opcio < 1 || opcio > 2);
             switch (opcio) {
                 case 1:
-                    triat = "missatge.hash";
+                    triat = "missatgeDolent.txt";
                     break;
 
                 case 2:
@@ -93,6 +192,12 @@ public class Hash {
 
             System.out.println("Hash original: " + hashGuardat);
             System.out.println("Hash rebut:    " + hashRebut);
+            // 6. Mira si coincideixen
+            if (hashRebut.equals(hashGuardat)) {
+                System.out.println("COINCIDEIXEN!");
+            } else {
+                System.out.println("NO COINCIDEIXEN, ALGUNA COSA NO HA ANAT BÉ :[");
+            }
         } catch (IOException e) {
             System.out.println("Error amb els fitxers: " + e.getMessage());
         }
@@ -162,7 +267,7 @@ public class Hash {
             byte[] bytesIn = missatge.getBytes(StandardCharsets.UTF_8);
 
             // Instanciem la classe per fer el hash
-            MessageDigest sha512 = MessageDigest.getInstance("SHA-512");
+            MessageDigest sha512 = MessageDigest.getInstance("SHA-256");
 
             // Calculem el hash
             byte[] hashResult = sha512.digest(bytesIn);
